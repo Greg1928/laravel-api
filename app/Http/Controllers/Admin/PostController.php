@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Category;
 use App\Post;
 use App\Tag;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -18,7 +19,9 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::all();
+        $user = Auth::user();
+        $posts = $user->posts;
+
         return view('admin.posts.index', compact('posts'));
     }
 
@@ -60,6 +63,8 @@ class PostController extends Controller
         $newPost->slug = $this->getSlug($data['title']);
 
         $newPost->published = isset($data['published']);
+
+        $newPost->user_id = Auth::id();
         $newPost->save();
 
         //tags
@@ -78,6 +83,9 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
+        if($post->user_id !== Auth::id()) {
+            abort(403);
+        }
         return view('admin.posts.show', compact('post'));
     }
 
@@ -89,6 +97,9 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
+        if($post->user_id !== Auth::id()) {
+            abort(403);
+        }
         $categories = Category::all();
         $tags = Tag::all();
         $postTags = $post->tags->map(function ($item){
@@ -107,6 +118,9 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        if($post->user_id !== Auth::id()) {
+            abort(403);
+        }
         //validation
         $request->validate([
             'title' => 'required|string|max:255',
@@ -141,6 +155,9 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
+        if($post->user_id !== Auth::id()) {
+            abort(403);
+        }
        $post->delete();
        
        return redirect(route('admin.posts.index'));
